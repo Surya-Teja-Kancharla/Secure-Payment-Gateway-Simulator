@@ -1,0 +1,21 @@
+{
+  "info": {
+    "name": "Payment Gateway API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Process Payment",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": 1,\n  \"merchantId\": 1,\n  \"amount\": 1000,\n  \"cardToken\": \"TOK-1111-2222\"\n}"
+        },
+        "url": {"raw": "http://localhost:8080/api/payments/process", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api","payments","process"]}
+      },
+      "response": []
+    }
+  ]
+}
