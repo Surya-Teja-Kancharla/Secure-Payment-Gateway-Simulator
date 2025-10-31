@@ -19,7 +19,7 @@ function App() {
       const res = await axios.get(`${API_BASE}/payments/transactions/all`);
       setTransactions(res.data.reverse());
     } catch (err) {
-      toast.error("Failed to load transactions");
+      toast.error("❌ Failed to load transactions");
       console.error(err);
     }
   };
@@ -33,12 +33,12 @@ function App() {
       if (res.data.status === "AUTHORIZED") {
         toast.success("✅ Payment authorized successfully!");
       } else {
-        toast.warn("⚠️ Payment declined!");
+        toast.warn("⚠️ Payment declined. Please check balance or limit.");
       }
 
       setShowModal(true);
     } catch (err) {
-      toast.error("🚫 Payment request failed!");
+      toast.error("🚫 Payment request failed! Check backend connection.");
       console.error(err);
     }
   };
@@ -61,6 +61,7 @@ function App() {
           </Col>
         </Row>
 
+        {/* Payment Form */}
         <Row className="justify-content-center mb-4">
           <Col md={10}>
             <div className="shadow-sm p-4 bg-white rounded-3">
@@ -69,6 +70,7 @@ function App() {
           </Col>
         </Row>
 
+        {/* Transactions Table */}
         <Row className="justify-content-center">
           <Col md={10}>
             <div className="shadow-sm bg-white p-3 rounded-3">
@@ -77,24 +79,71 @@ function App() {
           </Col>
         </Row>
 
+        {/* Toast Notifications */}
         <ToastContainer position="top-right" autoClose={3000} />
 
-        <Modal
-          show={showModal}
-          onHide={() => setShowModal(false)}
-          centered
-          backdrop="static"
-        >
-          <Modal.Header closeButton>
-            <Modal.Title>Transaction Result</Modal.Title>
+        {/* ✨ Beautiful Transaction Summary Modal */}
+        <Modal show={showModal} onHide={() => setShowModal(false)} centered backdrop="static">
+          <Modal.Header closeButton className="bg-primary text-white">
+            <Modal.Title>Transaction Summary</Modal.Title>
           </Modal.Header>
-          <Modal.Body>
+
+          <Modal.Body className="bg-light">
             {lastResponse ? (
-              <pre>{JSON.stringify(lastResponse, null, 2)}</pre>
+              <div className="p-3 bg-white rounded shadow-sm">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h5 className="text-primary fw-bold">
+                    Ref: {lastResponse.transactionRef}
+                  </h5>
+                  <span
+                    className={`badge px-3 py-2 ${
+                      lastResponse.status === "AUTHORIZED"
+                        ? "bg-success"
+                        : "bg-danger"
+                    }`}
+                  >
+                    {lastResponse.status}
+                  </span>
+                </div>
+
+                <hr />
+
+                <div className="row mb-2">
+                  <div className="col-6">
+                    <strong>Transaction ID:</strong>
+                    <div>{lastResponse.txnId}</div>
+                  </div>
+                  <div className="col-6">
+                    <strong>Timestamp:</strong>
+                    <div>
+                      {new Date(lastResponse.timestamp).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="row mb-2">
+                  <div className="col-6">
+                    <strong>Message:</strong>
+                    <div>{lastResponse.message}</div>
+                  </div>
+                  <div className="col-6">
+                    <strong>Amount:</strong>
+                    <div className="fw-bold text-success">
+                      ₹
+                      {lastResponse.amount
+                        ? lastResponse.amount.toFixed(2)
+                        : "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <p>No recent transaction.</p>
+              <p className="text-muted text-center my-4">
+                No recent transaction available
+              </p>
             )}
           </Modal.Body>
+
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowModal(false)}>
               Close
