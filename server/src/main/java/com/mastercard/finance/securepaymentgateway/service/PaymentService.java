@@ -36,78 +36,97 @@ public class PaymentService {
 
     @Transactional
     public ProcessPaymentResponse processPayment(ProcessPaymentRequest req) {
-        ProcessPaymentResponse resp = new ProcessPaymentResponse();
         LocalDateTime now = LocalDateTime.now();
 
-        User user = userRepo.findById(req.getUserId()).orElseThrow(() -> new IllegalArgumentException("User not found"));
-        Merchant merchant = merchantRepo.findById(req.getMerchantId()).orElseThrow(() -> new IllegalArgumentException("Merchant not found"));
+        User user = userRepo.findById(req.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        Merchant merchant = merchantRepo.findById(req.getMerchantId())
+                .orElseThrow(() -> new IllegalArgumentException("Merchant not found"));
 
-        // Basic validation - card token match (simplified)
+        // ✅ Card token validation
         if (req.getCardToken() == null || !req.getCardToken().equals(user.getCardToken())) {
-            Transaction txn = createTransaction(user.getId(), merchant.getId(), req.getAmount(), "DECLINED", "Invalid card token", now);
+            Transaction txn = createTransaction(user.getId(), merchant.getId(), req.getAmount(),
+                    "DECLINED", "Invalid card token", now);
             saveAudit(txn.getId(), "DECLINED: Invalid card token");
-            resp.setTxnId(txn.getId());
-            resp.setTransactionRef(txn.getTransactionRef());
-            resp.setStatus(txn.getStatus());
-            resp.setMessage(txn.getReason());
-            resp.setTimestamp(now);
-            return resp;
+            return new ProcessPaymentResponse(
+                    txn.getId(),
+                    txn.getTransactionRef(),
+                    txn.getStatus(),
+                    txn.getReason(),
+                    now,
+                    txn.getAmount()
+            );
         }
 
-        // Validation: amount > 0
+        // ✅ Amount validation
         if (req.getAmount() <= 0) {
-            Transaction txn = createTransaction(user.getId(), merchant.getId(), req.getAmount(), "DECLINED", "Invalid amount", now);
+            Transaction txn = createTransaction(user.getId(), merchant.getId(), req.getAmount(),
+                    "DECLINED", "Invalid amount", now);
             saveAudit(txn.getId(), "DECLINED: Invalid amount");
-            resp.setTxnId(txn.getId());
-            resp.setTransactionRef(txn.getTransactionRef());
-            resp.setStatus(txn.getStatus());
-            resp.setMessage(txn.getReason());
-            resp.setTimestamp(now);
-            return resp;
+            return new ProcessPaymentResponse(
+                    txn.getId(),
+                    txn.getTransactionRef(),
+                    txn.getStatus(),
+                    txn.getReason(),
+                    now,
+                    txn.getAmount()
+            );
         }
 
-        // High-amount rule: decline if above threshold
+        // ✅ High-amount rule
         final double MAX_LIMIT = 50000.00;
         if (req.getAmount() > MAX_LIMIT) {
-            Transaction txn = createTransaction(user.getId(), merchant.getId(), req.getAmount(), "DECLINED", "Amount exceeds limit", now);
+            Transaction txn = createTransaction(user.getId(), merchant.getId(), req.getAmount(),
+                    "DECLINED", "Amount exceeds limit", now);
             saveAudit(txn.getId(), "DECLINED: Amount exceeds limit");
-            resp.setTxnId(txn.getId());
-            resp.setTransactionRef(txn.getTransactionRef());
-            resp.setStatus(txn.getStatus());
-            resp.setMessage(txn.getReason());
-            resp.setTimestamp(now);
-            return resp;
+            return new ProcessPaymentResponse(
+                    txn.getId(),
+                    txn.getTransactionRef(),
+                    txn.getStatus(),
+                    txn.getReason(),
+                    now,
+                    txn.getAmount()
+            );
         }
 
-        // Balance check
+        // ✅ Insufficient balance
         if (user.getBalance() < req.getAmount()) {
-            Transaction txn = createTransaction(user.getId(), merchant.getId(), req.getAmount(), "DECLINED", "Insufficient funds", now);
-            saveAudit(txn.getId(), "DECLINED: Insufficient funds");
-            resp.setTxnId(txn.getId());
-            resp.setTransactionRef(txn.getTransactionRef());
-            resp.setStatus(txn.getStatus());
-            resp.setMessage(txn.getReason());
-            resp.setTimestamp(now);
-            return resp;
+            Transaction txn = createTransaction(user.getId(), merchant.getId(), req.getAmount(),
+                    "DECLINED", "Insufficient balance", now);
+            saveAudit(txn.getId(), "DECLINED: Insufficient balance");
+            return new ProcessPaymentResponse(
+                    txn.getId(),
+                    txn.getTransactionRef(),
+                    txn.getStatus(),
+                    txn.getReason(),
+                    now,
+                    txn.getAmount()
+            );
         }
 
-        // All good: perform debit/credit
+        // ✅ All good — perform debit & credit
         user.setBalance(roundToTwo(user.getBalance() - req.getAmount()));
         merchant.setBalance(roundToTwo(merchant.getBalance() + req.getAmount()));
         userRepo.save(user);
         merchantRepo.save(merchant);
 
-        Transaction txn = createTransaction(user.getId(), merchant.getId(), req.getAmount(), "AUTHORIZED", null, now);
+        Transaction txn = createTransaction(user.getId(), merchant.getId(), req.getAmount(),
+                "AUTHORIZED", null, now);
         saveAudit(txn.getId(), "AUTHORIZED");
-        resp.setTxnId(txn.getId());
-        resp.setTransactionRef(txn.getTransactionRef());
-        resp.setStatus(txn.getStatus());
-        resp.setMessage("Payment authorized");
-        resp.setTimestamp(now);
-        return resp;
+
+        return new ProcessPaymentResponse(
+                txn.getId(),
+                txn.getTransactionRef(),
+                txn.getStatus(),
+                "Payment authorized",
+                now,
+                txn.getAmount()
+        );
     }
 
-    private Transaction createTransaction(Long userId, Long merchantId, double amount, String status, String reason, LocalDateTime ts) {
+    // ✅ Helper: Create and persist a transaction
+    private Transaction createTransaction(Long userId, Long merchantId, double amount,
+                                          String status, String reason, LocalDateTime ts) {
         Transaction txn = new Transaction();
         txn.setTransactionRef("TXN-" + UUID.randomUUID().toString().substring(0, 8));
         txn.setUserId(userId);
@@ -119,6 +138,7 @@ public class PaymentService {
         return txnRepo.save(txn);
     }
 
+    // ✅ Helper: Save audit log
     private void saveAudit(Long txnId, String event) {
         AuditLog log = new AuditLog();
         log.setTxnId(txnId);
@@ -127,7 +147,7 @@ public class PaymentService {
         auditRepo.save(log);
     }
 
-    // Helper to avoid floating point issues for money in demos (production: use BigDecimal)
+    // ✅ Helper: Round to 2 decimals (avoid float issues)
     private double roundToTwo(double val) {
         return Math.round(val * 100.0) / 100.0;
     }
