@@ -1,0 +1,33 @@
+body {
+  background-color: #f7f9fb;
+}
+
+.table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table-primary th {
+  background-color: #0078d4 !important;
+  color: white !important;
+}
+
+.btn-primary {
+  background-color: #0078d4 !important;
+  border-color: #0078d4 !important;
+}
+
+.btn-primary:hover {
+  background-color: #005fa3 !important;
+}
+
+.alert-info {
+  background-color: #eaf5ff;
+  border: 1px solid #b8d6ff;
+}
+
+pre {
+  background: #f0f4f8;
+  padding: 10px;
+  border-radius: 6px;
+}
