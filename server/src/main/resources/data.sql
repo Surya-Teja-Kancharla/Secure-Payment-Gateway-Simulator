@@ -64,9 +64,9 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 -- ==============================================================
 INSERT INTO users (name, email, password_hash, card_token, balance, role)
 VALUES
-('Surya Teja', 'surya@example.com', crypt('surya123', gen_salt('bf')), 'TOK-1111-2222', 100000.00, 'USER'),
-('Ravi Kumar', 'ravi@example.com', crypt('ravi123', gen_salt('bf')), 'TOK-3333-4444', 65000.00, 'USER'),
-('Anjali Sharma', 'anjali@example.com', crypt('anjali123', gen_salt('bf')), 'TOK-5555-6666', 48000.00, 'USER');
+('Surya Teja', 'surya@gmail.com', crypt('surya123', gen_salt('bf')), 'TOK-1111-2222', 100000.00, 'USER'),
+('Ravi Kumar', 'ravi@gmail.com', crypt('ravi123', gen_salt('bf')), 'TOK-3333-4444', 65000.00, 'USER'),
+('Anjali Sharma', 'anjali@gmail.com', crypt('anjali123', gen_salt('bf')), 'TOK-5555-6666', 48000.00, 'USER');
 
 INSERT INTO merchants (name, category, balance) VALUES
 ('Amazon India', 'E-commerce', 0.00),
