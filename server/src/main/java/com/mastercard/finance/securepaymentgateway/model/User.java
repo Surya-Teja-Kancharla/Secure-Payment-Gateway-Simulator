@@ -12,6 +12,8 @@ public class User {
     private Long id;
     private String name;
     private String email;
+    private String password_hash;
     private String cardToken;
-    private double balance;
+    private Double balance;
+    private String role;
 }
