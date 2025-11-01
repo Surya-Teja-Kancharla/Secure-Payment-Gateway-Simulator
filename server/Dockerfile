@@ -1,26 +1,26 @@
-# ---- Stage 1: Build with Maven ----
-FROM maven:3.9.6-eclipse-temurin-21 AS builder
+# ===== Build stage =====
+FROM maven:3.9.6-eclipse-temurin-22 AS builder
 WORKDIR /app
 
-# Copy pom.xml first for dependency caching
-COPY server/pom.xml .
+# Copy pom.xml and download dependencies
+COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copy source code (from /server/src)
-COPY server/src ./src
+# Copy source code
+COPY src ./src
 
-# Package application (skip tests to speed up build)
+# Build the Spring Boot JAR (skip tests to save time)
 RUN mvn clean package -DskipTests
 
-# ---- Stage 2: Runtime image ----
-FROM eclipse-temurin:21-jdk-jammy
+# ===== Run stage =====
+FROM eclipse-temurin:22-jdk
 WORKDIR /app
 
-# Copy jar from builder stage
+# Copy built JAR from builder
 COPY --from=builder /app/target/*.jar app.jar
 
-# Expose port
+# Expose backend port
 EXPOSE 8080
 
-# Run application
+# Run the app
 ENTRYPOINT ["java", "-jar", "app.jar"]
